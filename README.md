@@ -41,7 +41,7 @@ cd libwebp-0.3.1
 Then, apply a `WebP` patch for `GM`
 
 ```
-cp graphicsmagick-webp-patch/src/patch/gm-1.3.18-webp.patch /opt/GraphicsMagick-1.3.18/
+cp graphicsmagick-webp-patch/patch/gm-1.3.18-webp.patch /opt/GraphicsMagick-1.3.18/
 
 cd /opt/GraphicsMagick-1.3.18/
 patch -p1 < gm-1.3.18-webp.patch
