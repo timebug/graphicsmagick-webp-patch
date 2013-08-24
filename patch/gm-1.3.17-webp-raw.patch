@@ -1,0 +1,575 @@
+diff -rNu GraphicsMagick-1.3.17.orig/coders/Makefile.am GraphicsMagick-1.3.17/coders/Makefile.am
+--- GraphicsMagick-1.3.17.orig/coders/Makefile.am	2012-10-14 05:30:21.000000000 +0800
++++ GraphicsMagick-1.3.17/coders/Makefile.am	2013-08-24 20:47:04.896204862 +0800
+@@ -56,6 +56,11 @@
+ MAGICK_X11_CODER_SRCS = coders/x.c coders/xwd.c
+ endif
+ 
++if HasWEBP
++MAGICK_WEBP_MODULES = coders/webp.la
++MAGICK_WEBP_SRCS = coders/webp.c
++endif
++
+ MAGICK_CODER_SRCS = \
+ 	$(MAGICK_PNG_SRCS) \
+ 	coders/art.c \
+@@ -152,7 +157,8 @@
+ 	$(MAGICK_JPEG_SRCS) \
+ 	$(MAGICK_JP2_SRCS) \
+ 	$(MAGICK_TIFF_SRCS) \
+-	$(MAGICK_X11_CODER_SRCS)
++	$(MAGICK_X11_CODER_SRCS) \
++	$(MAGICK_WEBP_SRCS)
+ 
+ if WITH_MODULES
+ coders_LTLIBRARIES = \
+@@ -245,7 +251,8 @@
+ 	coders/yuv.la \
+ 	$(MAGICK_DPS_MODULES) $(MAGICK_FPX_MODULES) $(MAGICK_GDI32_MODULES) \
+ 	$(MAGICK_JBIG_MODULES) $(MAGICK_JPEG_MODULES) $(MAGICK_JP2_MODULES) \
+-	$(MAGICK_PNG_MODULES) $(MAGICK_TIFF_MODULES) $(MAGICK_X11_CODER_MODULES)
++	$(MAGICK_PNG_MODULES) $(MAGICK_TIFF_MODULES) $(MAGICK_X11_CODER_MODULES) \
++	$(MAGICK_WEBP_MODULES)
+ else
+ coders_LTLIBRARIES =
+ endif # WITH_MODULES
+@@ -849,3 +856,9 @@
+ coders_yuv_la_CPPFLAGS     = $(MODULE_EXTRA_CPPFLAGS)
+ coders_yuv_la_LDFLAGS      = $(MODULECOMMONFLAGS)
+ coders_yuv_la_LIBADD       = $(LIBMAGICK)
++
++# WEBP coder module
++coders_webp_la_SOURCES     = coders/webp.c
++coders_webp_la_CPPFLAGS    = $(MODULE_EXTRA_CPPFLAGS)
++coders_webp_la_LDFLAGS     = $(MODULECOMMONFLAGS)
++coders_webp_la_LIBADD      = $(LIBMAGICK) $(LIB_WEBP)
+diff -rNu GraphicsMagick-1.3.17.orig/coders/webp.c GraphicsMagick-1.3.17/coders/webp.c
+--- GraphicsMagick-1.3.17.orig/coders/webp.c	1970-01-01 08:00:00.000000000 +0800
++++ GraphicsMagick-1.3.17/coders/webp.c	2013-08-24 20:46:39.695461596 +0800
+@@ -0,0 +1,384 @@
++/*
++% Copyright (C) 2003, 2013 GraphicsMagick Group
++% Copyright (C) 2002 ImageMagick Studio
++% Copyright 1991-1999 E. I. du Pont de Nemours and Company
++%
++% This program is covered by multiple licenses, which are described in
++% Copyright.txt. You should have received a copy of Copyright.txt with this
++% package; otherwise see http://www.graphicsmagick.org/www/Copyright.html.
++%
++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
++%                                                                             %
++%                                                                             %
++%                                                                             %
++%                         W   W  EEEEE  BBBB   PPPP                           %
++%                         W   W  E      B   B  P   P                          %
++%                         W W W  EEE    BBBB   PPPP                           %
++%                         WW WW  E      B   B  P                              %
++%                         W   W  EEEEE  BBBB   P                              %
++%                                                                             %
++%                                                                             %
++%                     Read/Write Google WEBP Image Format.                    %
++%                                                                             %
++%                                                                             %
++%                              Software Design                                %
++%                                  TIMEBUG                                    %
++%                                January 2013                                 %
++%                                                                             %
++%                                                                             %
++%                                                                             %
++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
++%
++%
++*/
++
++/*
++  Include declarations.
++*/
++#include "magick/studio.h"
++#include "magick/blob.h"
++#include "magick/colormap.h"
++#include "magick/log.h"
++#include "magick/constitute.h"
++#include "magick/magick.h"
++#include "magick/monitor.h"
++#include "magick/pixel_cache.h"
++#include "magick/utility.h"
++
++/*
++  Forward declarations.
++*/
++#if defined(HasWEBP)
++static unsigned int WriteWEBPImage(const ImageInfo *,Image *);
++#endif
++
++#if defined(HasWEBP)
++#include <webp/decode.h>
++#include <webp/encode.h>
++
++/*
++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
++%                                                                             %
++%                                                                             %
++%                                                                             %
++%   R e a d W E B P I m a g e                                                 %
++%                                                                             %
++%                                                                             %
++%                                                                             %
++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
++%
++%  ReadWEBPImage() reads an image in the WebP image format.
++%
++%  The format of the ReadWEBPImage method is:
++%
++%      Image *ReadWEBPImage(const ImageInfo *image_info,
++%        ExceptionInfo *exception)
++%
++%  A description of each parameter follows:
++%
++%    o image_info: the image info.
++%
++%    o exception: return any errors or warnings in this structure.
++%
++*/
++static Image *ReadWEBPImage(const ImageInfo *image_info,
++    ExceptionInfo *exception)
++{
++  int
++    height,
++    width;
++
++  Image
++    *image;
++
++  int
++    status;
++
++  size_t
++    length;
++
++  unsigned long
++    count,
++    y;
++
++  register PixelPacket
++    *q;
++
++  register size_t
++    x;
++
++  register unsigned char
++    *p;
++
++  unsigned char
++    *stream,
++    *pixels;
++
++  /*
++    Open image file.
++  */
++  assert(image_info != (const ImageInfo *) NULL);
++  assert(image_info->signature == MagickSignature);
++  assert(exception != (ExceptionInfo *) NULL);
++  assert(exception->signature == MagickSignature);
++  image=AllocateImage(image_info);
++  status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
++  if (status == False)
++    ThrowReaderException(FileOpenError,UnableToOpenFile,image);
++  /*
++    Read WEBP file.
++  */
++  length = (size_t) GetBlobSize(image);
++  stream=(unsigned char *) MagickAllocateMemory(unsigned char *,
++    length*sizeof(*stream));
++  if (stream == (unsigned char *) NULL)
++    ThrowReaderException(ResourceLimitError,MemoryAllocationFailed,image);
++
++  count=(long) ReadBlob(image,length,(char *) stream);
++  if (count != (size_t) length)
++    ThrowReaderException(CorruptImageError,InsufficientImageDataInFile,image);
++
++  pixels=(unsigned char *) WebPDecodeRGBA(stream,length,&width,&height);
++  if (pixels == (unsigned char *) NULL)
++    ThrowReaderException(ResourceLimitError,MemoryAllocationFailed,image);
++  image->columns=(size_t) width;
++  image->rows=(size_t) height;
++
++  p=pixels;
++
++  for (y=0; y < (size_t) image->rows; y++)
++  {
++    q=GetImagePixelsEx(image,0,y,image->columns,1,exception);
++    if (q == (PixelPacket *) NULL)
++      break;
++    for (x=0; x < (size_t) image->columns; x++)
++    {
++      SetRedSample(q,ScaleCharToQuantum(*p++));
++      SetGreenSample(q,ScaleCharToQuantum(*p++));
++      SetBlueSample(q,ScaleCharToQuantum(*p++));
++      SetOpacitySample(q,ScaleCharToQuantum(*p++));
++      q++;
++    }
++
++    if(!SyncImagePixels(image))
++      break;
++  }
++  /*
++    Free scale resource.
++  */
++  free(pixels);
++  pixels=(unsigned char *) NULL;
++  MagickFreeMemory(stream);
++  CloseBlob(image);
++  return(image);
++}
++#endif
++
++/*
++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
++%                                                                             %
++%                                                                             %
++%                                                                             %
++%   R e g i s t e r W E B P I m a g e                                         %
++%                                                                             %
++%                                                                             %
++%                                                                             %
++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
++%
++%  Method RegisterWEBPImage adds attributes for the WEBP image format to
++%  the list of supported formats.  The attributes include the image format
++%  tag, a method to read and/or write the format, whether the format
++%  supports the saving of more than one frame to the same file or blob,
++%  whether the format supports native in-memory I/O, and a brief
++%  description of the format.
++%
++%  The format of the RegisterWEBPImage method is:
++%
++%      RegisterWEBPImage(void)
++%
++*/
++ModuleExport void RegisterWEBPImage(void)
++{
++  static const char
++    *description = "WebP Image Format";
++
++  static char
++    version[MaxTextExtent];
++
++  MagickInfo
++    *entry;
++
++  *version='\0';
++  entry=SetMagickInfo("WEBP");
++#if defined(HasWEBP)
++  entry->decoder=(DecoderHandler) ReadWEBPImage;
++  entry->encoder=(EncoderHandler) WriteWEBPImage;
++#endif
++  entry->description=description;
++  entry->adjoin=False;
++  if (*version != '\0')
++    entry->version=version;
++  entry->module="WEBP";
++  entry->coder_class=PrimaryCoderClass;
++  (void) RegisterMagickInfo(entry);
++}
++
++/*
++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
++%                                                                             %
++%                                                                             %
++%                                                                             %
++%   U n r e g i s t e r J B I G I m a g e                                     %
++%                                                                             %
++%                                                                             %
++%                                                                             %
++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
++%
++%  Method UnregisterWEBPImage removes format registrations made by the
++%  WEBP module from the list of supported formats.
++%
++%  The format of the UnregisterWEBPImage method is:
++%
++%      UnregisterWEBPImage(void)
++%
++*/
++ModuleExport void UnregisterWEBPImage(void)
++{
++  (void) UnregisterMagickInfo("WEBP");
++}
++
++#if defined(HasWEBP)
++/*
++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
++%                                                                             %
++%                                                                             %
++%                                                                             %
++%   W r i t e W E B P I m a g e                                               %
++%                                                                             %
++%                                                                             %
++%                                                                             %
++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
++%
++%  WriteWEBPImage() writes an image in the WebP image format.
++%
++%  The format of the WriteWEBPImage method is:
++%
++%      unsigned int WriteWEBPImage(const ImageInfo *image_info, Image *image)
++%
++%  A description of each parameter follows.
++%
++%    o image_info: the image info.
++%
++%    o image:  The image.
++%
++*/
++
++static int WebPWriter(const unsigned char *stream,size_t length,
++  const WebPPicture *const picture)
++{
++  Image
++    *image;
++
++  image=(Image *) picture->custom_ptr;
++  return (length != 0 ? (int) WriteBlob(image,length,stream) : 1);
++}
++
++
++static unsigned int WriteWEBPImage(const ImageInfo *image_info,Image *image)
++{
++  int
++    webp_status;
++
++  unsigned int
++    status;
++
++  register PixelPacket
++    *p;
++
++  register size_t
++    x;
++
++  register unsigned char
++    *q;
++
++  unsigned long
++    y;
++
++  unsigned char
++    *pixels;
++
++  WebPConfig
++    configure;
++
++  WebPPicture
++    picture;
++
++  WebPAuxStats
++    statistics;
++
++  /*
++    Open output image file.
++  */
++  assert(image_info != (const ImageInfo *) NULL);
++  assert(image_info->signature == MagickSignature);
++  assert(image != (Image *) NULL);
++  assert(image->signature == MagickSignature);
++  if ((image->columns > 16383) || (image->rows > 16383))
++    ThrowWriterException(ImageError,WidthOrHeightExceedsLimit,image);
++  status=OpenBlob(image_info,image,WriteBinaryBlobMode,&image->exception);
++  if (status == False)
++    ThrowWriterException(FileOpenError,UnableToOpenFile,image);
++  if (WebPPictureInit(&picture) == 0)
++    ThrowWriterException(ResourceLimitError, MemoryAllocationFailed, image);
++  picture.writer=WebPWriter;
++  picture.custom_ptr=(void *) image;
++  picture.stats=(&statistics);
++  picture.width=(int) image->columns;
++  picture.height=(int) image->rows;
++  if (WebPConfigInit(&configure) == 0)
++    ThrowWriterException(ResourceLimitError,MemoryAllocationFailed,image);
++  if (image_info->quality != DefaultCompressionQuality)
++    configure.quality = (float) image_info->quality;
++  if (WebPValidateConfig(&configure) == 0)
++    ThrowWriterException(ResourceLimitError,MemoryAllocationFailed,image);
++
++  /*
++    Allocate memory for pixels.
++  */
++  size_t per_column = 4*image->rows*sizeof(*pixels);
++  pixels=MagickAllocateMemory(unsigned char *,image->columns*per_column);
++  if (pixels == (unsigned char *) NULL)
++    ThrowWriterException(ResourceLimitError,MemoryAllocationFailed,image);
++
++  /*
++    Convert image to WebP raster pixels.
++    */
++  q=pixels;
++  for (y=0; y < (size_t) image->rows; y++)
++  {
++    p=GetImagePixelsEx(image,0,y,image->columns,1,&image->exception);
++    if (p == (const PixelPacket *) NULL)
++      break;
++    for (x=0; x < (size_t) image->columns; x++)
++    {
++      *q++=ScaleQuantumToChar(GetRedSample(p));
++      *q++=ScaleQuantumToChar(GetGreenSample(p));
++      *q++=ScaleQuantumToChar(GetBlueSample(p));
++      if (image->matte == MagickTrue)
++        *q++=ScaleQuantumToChar(MaxRGB-GetOpacitySample(p));
++      p++;
++    }
++  }
++
++  if (image->matte != MagickTrue)
++    webp_status=WebPPictureImportRGB(&picture,pixels,3*picture.width);
++  else
++    webp_status=WebPPictureImportRGBA(&picture,pixels,4*picture.width);
++  MagickFreeMemory(pixels);
++  webp_status=WebPEncode(&configure, &picture);
++  WebPPictureFree(&picture);
++  CloseBlob(image);
++
++  return(webp_status == 0 ? False : True);
++}
++#endif
+diff -rNu GraphicsMagick-1.3.17.orig/configure.ac GraphicsMagick-1.3.17/configure.ac
+--- GraphicsMagick-1.3.17.orig/configure.ac	2012-10-14 05:30:21.000000000 +0800
++++ GraphicsMagick-1.3.17/configure.ac	2013-08-24 20:47:04.897204851 +0800
+@@ -662,6 +662,16 @@
+     DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-jbig=$with_jbig "
+ fi
+ 
++# Disable WEBP.
++AC_ARG_WITH(webp,
++        AS_HELP_STRING([--without-webp],
++                             [disable WEBP support]),
++        [with_webp=$withval],
++        [with_webp='yes'])
++if test "$with_webp" != 'yes' ; then
++    DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-webp=$with_webp "
++fi
++
+ # Disable JPEG.
+ AC_ARG_WITH(jpeg,
+ 	      AS_HELP_STRING([--without-jpeg],
+@@ -2356,6 +2366,40 @@
+ AC_SUBST(LIB_JBIG)
+ 
+ #
++# Check for WEBP
++#
++have_webp='no'
++LIB_WEBP=''
++if test "$with_webp" != 'no'
++then
++    AC_MSG_CHECKING(for WEBP support )
++    AC_MSG_RESULT()
++    failed=0
++    passed=0
++    AC_CHECK_HEADER(webp/decode.h,passed=`expr $passed + 1`,failed=`expr $failed + 1`,)
++    AC_CHECK_LIB(webp,WebPDecodeRGB,passed=`expr $passed + 1`,failed=`expr $failed + 1`,)
++    AC_MSG_CHECKING(if WEBP package is complete)
++    if test $passed -gt 0
++    then
++    if test $failed -gt 0
++    then
++  AC_MSG_RESULT(no -- some components failed test)
++        have_webp='no (failed tests)'
++    else
++  LIB_WEBP='-lwebp'
++  LIBS="$LIB_WEBP $LIBS"
++  AC_DEFINE(HasWEBP,1,Define if you have WEBP library)
++  AC_MSG_RESULT(yes)
++        have_webp='yes'
++    fi
++    else
++        AC_MSG_RESULT(no)
++    fi
++fi
++AM_CONDITIONAL(HasWEBP, test "$have_webp" = 'yes')
++AC_SUBST(LIB_WEBP)
++
++#
+ # Check for XML
+ #
+ have_xml='no'
+@@ -3153,6 +3197,10 @@
+    DELEGATES="$DELEGATES jbig"
+    MAGICK_FEATURES="$MAGICK_FEATURES JBIG"
+ fi
++if test "$have_webp"   = 'yes' ; then
++   DELEGATES="$DELEGATES webp"
++   MAGICK_FEATURES="$MAGICK_FEATURES WEBP"
++fi
+ if test "$have_png$have_jpeg" = 'yesyes' ; then
+    DELEGATES="$DELEGATES jng"
+    MAGICK_FEATURES="$MAGICK_FEATURES JNG"
+@@ -3305,7 +3353,7 @@
+ then
+   MAGICK_DEP_LIBS="$LIB_LCMS $LIB_TTF $LIB_GS $LIB_XEXT $LIB_IPC $LIB_X11 $LIB_LZMA $LIB_BZLIB $LIB_ZLIB $LIB_TRIO $LIB_GDI32 $LIB_MATH $LIB_OMP $LIB_UMEM $LIB_THREAD"
+ else
+-  MAGICK_DEP_LIBS="$LIB_JBIG $LIB_LCMS $LIB_TIFF $LIB_TTF $LIB_JP2 $LIB_JPEG $LIB_GS $LIB_PNG $LIB_FPX $LIB_WMF $LIB_DPS $LIB_XEXT $LIB_IPC $LIB_X11 $LIB_LZMA $LIB_BZLIB $LIB_XML $LIB_ZLIB $LIB_TRIO $LIB_GDI32 $LIB_MATH $LIB_OMP $LIB_UMEM $LIB_THREAD"
++  MAGICK_DEP_LIBS="$LIB_JBIG $LIB_WEBP $LIB_LCMS $LIB_TIFF $LIB_TTF $LIB_JP2 $LIB_JPEG $LIB_GS $LIB_PNG $LIB_FPX $LIB_WMF $LIB_DPS $LIB_XEXT $LIB_IPC $LIB_X11 $LIB_LZMA $LIB_BZLIB $LIB_XML $LIB_ZLIB $LIB_TRIO $LIB_GDI32 $LIB_MATH $LIB_OMP $LIB_UMEM $LIB_THREAD"
+ fi
+ AC_SUBST(MAGICK_DEP_LIBS)
+ 
+@@ -3427,6 +3475,7 @@
+ echo "Ghostscript fonts --with-gs-font-dir=$with_gs_font_dir    $result_ghostscript_font_dir"
+ echo "Ghostscript lib   --with-gslib=$with_gslib       	$have_gslib"
+ echo "JBIG              --with-jbig=$with_jbig        	$have_jbig"
++echo "WEBP              --with-webp=$with_webp        	$have_webp"
+ echo "JPEG v1           --with-jpeg=$with_jpeg        	$have_jpeg"
+ echo "JPEG-2000         --with-jp2=$with_jp2          	$have_jp2"
+ echo "LCMS v1           --with-lcms=$with_lcms        	$have_lcms"
+diff -rNu GraphicsMagick-1.3.17.orig/magick/magic.c GraphicsMagick-1.3.17/magick/magic.c
+--- GraphicsMagick-1.3.17.orig/magick/magic.c	2011-12-25 03:34:17.000000000 +0800
++++ GraphicsMagick-1.3.17/magick/magic.c	2013-08-24 20:47:04.897204851 +0800
+@@ -59,6 +59,7 @@
+ StaticMagic[] =
+ {
+ #define MAGIC(name,offset,magic) {name,(unsigned char *)magic,sizeof(magic)-1,offset}
++  MAGIC("WEBP", 8, "WEBP"),
+   MAGIC("AVI", 0, "RIFF"),
+   MAGIC("8BIMWTEXT", 0, "8\000B\000I\000M\000#"),
+   MAGIC("8BIMTEXT", 0, "8BIM#"),
+diff -rNu GraphicsMagick-1.3.17.orig/magick/static.c GraphicsMagick-1.3.17/magick/static.c
+--- GraphicsMagick-1.3.17.orig/magick/static.c	2012-10-14 05:30:22.000000000 +0800
++++ GraphicsMagick-1.3.17/magick/static.c	2013-08-24 20:47:04.897204851 +0800
+@@ -246,6 +246,9 @@
+   RegisterVIDImage();
+   RegisterVIFFImage();
+   RegisterWBMPImage();
++#if defined(HasWEBP)
++  RegisterWEBPImage();
++#endif
+   RegisterWMFImage();
+   RegisterWPGImage();
+ #if defined(HasX11)
+@@ -401,6 +404,9 @@
+   UnregisterVIDImage();
+   UnregisterVIFFImage();
+   UnregisterWBMPImage();
++#if defined(HasWEBP)
++  UnregisterWEBPImage();
++#endif
+   UnregisterWMFImage();
+   UnregisterWPGImage();
+ #if defined(HasX11)
+diff -rNu GraphicsMagick-1.3.17.orig/magick/static.h GraphicsMagick-1.3.17/magick/static.h
+--- GraphicsMagick-1.3.17.orig/magick/static.h	2012-10-14 05:30:22.000000000 +0800
++++ GraphicsMagick-1.3.17/magick/static.h	2013-08-24 20:47:04.898204841 +0800
+@@ -142,6 +142,7 @@
+   RegisterVIFFImage(void),
+   RegisterVSTImage(void),
+   RegisterWBMPImage(void),
++  RegisterWEBPImage(void),
+   RegisterWMFImage(void),
+   RegisterWPGImage(void),
+   RegisterXImage(void),
+@@ -280,6 +281,7 @@
+   UnregisterVIFFImage(void),
+   UnregisterVSTImage(void),
+   UnregisterWBMPImage(void),
++  UnregisterWEBPImage(void),
+   UnregisterWMFImage(void),
+   UnregisterWPGImage(void),
+   UnregisterXImage(void),

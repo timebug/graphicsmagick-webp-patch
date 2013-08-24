@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003, 2007 GraphicsMagick Group
+% Copyright (C) 2003, 2013 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 % Copyright 1991-1999 E. I. du Pont de Nemours and Company
 %
@@ -22,8 +22,6 @@
 %                                                                             %
 %                                                                             %
 %                              Software Design                                %
-%                                John Cristy                                  %
-%                                 March 2011                                  %
 %                                  TIMEBUG                                    %
 %                                January 2013                                 %
 %                                                                             %

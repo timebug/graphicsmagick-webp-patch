@@ -16,8 +16,6 @@
 %                                                                             %
 %                                                                             %
 %                              Software Design                                %
-%                                John Cristy                                  %
-%                                 March 2011                                  %
 %                                  TIMEBUG                                    %
 %                                January 2013                                 %
 %                                                                             %
@@ -32,9 +30,9 @@
 First, you need Build & Install [libwebp](https://code.google.com/p/webp/downloads/list)
 
 ```
-wget 'https://webp.googlecode.com/files/libwebp-0.2.1.tar.gz'
-tar -xzvf libwebp-0.2.1.tar.gz
-cd libwebp-0.2.1
+wget 'https://webp.googlecode.com/files/libwebp-0.3.1.tar.gz'
+tar -xzvf libwebp-0.3.1.tar.gz
+cd libwebp-0.3.1
  ./configure
  make
  make install
@@ -43,11 +41,10 @@ cd libwebp-0.2.1
 Then, apply a `WebP` patch for `GM`
 
 ```
-cp graphicsmagick-webp-patch/src/coders/webp.c /opt/GraphicsMagick-1.3.17/coders/
-cp graphicsmagick-webp-patch/src/patch/GraphicsMagick-1.3.17-WebP-autotools.patch /opt/GraphicsMagick-1.3.17/
+cp graphicsmagick-webp-patch/src/patch/gm-1.3.18-webp.patch /opt/GraphicsMagick-1.3.18/
 
-cd /opt/GraphicsMagick-1.3.17/
-patch -p1 < GraphicsMagick-1.3.17-WebP-autotools.patch
+cd /opt/GraphicsMagick-1.3.18/
+patch -p1 < gm-1.3.18-webp.patch
 ```
 
 Now, you can Build & Install `GM` just like before
