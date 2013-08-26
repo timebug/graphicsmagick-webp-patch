@@ -1,6 +1,6 @@
 diff -rNu GraphicsMagick-1.3.17.orig/autom4te.cache/output.0 GraphicsMagick-1.3.17/autom4te.cache/output.0
 --- GraphicsMagick-1.3.17.orig/autom4te.cache/output.0	1970-01-01 08:00:00.000000000 +0800
-+++ GraphicsMagick-1.3.17/autom4te.cache/output.0	2013-08-24 20:49:02.739003113 +0800
++++ GraphicsMagick-1.3.17/autom4te.cache/output.0	2013-08-26 10:56:35.520467352 +0800
 @@ -0,0 +1,33784 @@
 +@%:@! /bin/sh
 +@%:@ Guess values for system-dependent variables and create Makefiles.
@@ -33788,7 +33788,7 @@ diff -rNu GraphicsMagick-1.3.17.orig/autom4te.cache/output.0 GraphicsMagick-1.3.
 +echo ""
 diff -rNu GraphicsMagick-1.3.17.orig/autom4te.cache/requests GraphicsMagick-1.3.17/autom4te.cache/requests
 --- GraphicsMagick-1.3.17.orig/autom4te.cache/requests	1970-01-01 08:00:00.000000000 +0800
-+++ GraphicsMagick-1.3.17/autom4te.cache/requests	2013-08-24 20:49:12.980898582 +0800
++++ GraphicsMagick-1.3.17/autom4te.cache/requests	2013-08-26 10:56:40.156421037 +0800
 @@ -0,0 +1,79 @@
 +# This file was generated.
 +# It contains the lists of macros which have been traced.
@@ -33871,7 +33871,7 @@ diff -rNu GraphicsMagick-1.3.17.orig/autom4te.cache/requests GraphicsMagick-1.3.
 +
 diff -rNu GraphicsMagick-1.3.17.orig/autom4te.cache/traces.0 GraphicsMagick-1.3.17/autom4te.cache/traces.0
 --- GraphicsMagick-1.3.17.orig/autom4te.cache/traces.0	1970-01-01 08:00:00.000000000 +0800
-+++ GraphicsMagick-1.3.17/autom4te.cache/traces.0	2013-08-24 20:49:02.738003123 +0800
++++ GraphicsMagick-1.3.17/autom4te.cache/traces.0	2013-08-26 10:56:35.519467362 +0800
 @@ -0,0 +1,3075 @@
 +m4trace:aclocal.m4:1075: -1- m4_include([m4/acx_pthread.m4])
 +m4trace:aclocal.m4:1076: -1- m4_include([ltdl/m4/argz.m4])
@@ -36950,7 +36950,7 @@ diff -rNu GraphicsMagick-1.3.17.orig/autom4te.cache/traces.0 GraphicsMagick-1.3.
 +m4trace:configure.ac:3444: -1- AC_REQUIRE_AUX_FILE([ltmain.sh])
 diff -rNu GraphicsMagick-1.3.17.orig/coders/Makefile.am GraphicsMagick-1.3.17/coders/Makefile.am
 --- GraphicsMagick-1.3.17.orig/coders/Makefile.am	2012-10-14 05:30:21.000000000 +0800
-+++ GraphicsMagick-1.3.17/coders/Makefile.am	2013-08-24 20:47:04.896204862 +0800
++++ GraphicsMagick-1.3.17/coders/Makefile.am	2013-08-26 10:49:50.848511478 +0800
 @@ -56,6 +56,11 @@
  MAGICK_X11_CODER_SRCS = coders/x.c coders/xwd.c
  endif
@@ -36995,7 +36995,7 @@ diff -rNu GraphicsMagick-1.3.17.orig/coders/Makefile.am GraphicsMagick-1.3.17/co
 +coders_webp_la_LIBADD      = $(LIBMAGICK) $(LIB_WEBP)
 diff -rNu GraphicsMagick-1.3.17.orig/coders/webp.c GraphicsMagick-1.3.17/coders/webp.c
 --- GraphicsMagick-1.3.17.orig/coders/webp.c	1970-01-01 08:00:00.000000000 +0800
-+++ GraphicsMagick-1.3.17/coders/webp.c	2013-08-24 20:46:39.695461596 +0800
++++ GraphicsMagick-1.3.17/coders/webp.c	2013-08-26 10:50:39.185028291 +0800
 @@ -0,0 +1,384 @@
 +/*
 +% Copyright (C) 2003, 2013 GraphicsMagick Group
@@ -37227,7 +37227,7 @@ diff -rNu GraphicsMagick-1.3.17.orig/coders/webp.c GraphicsMagick-1.3.17/coders/
 +%                                                                             %
 +%                                                                             %
 +%                                                                             %
-+%   U n r e g i s t e r J B I G I m a g e                                     %
++%   U n r e g i s t e r W E B P I m a g e                                     %
 +%                                                                             %
 +%                                                                             %
 +%                                                                             %
@@ -37383,7 +37383,7 @@ diff -rNu GraphicsMagick-1.3.17.orig/coders/webp.c GraphicsMagick-1.3.17/coders/
 +#endif
 diff -rNu GraphicsMagick-1.3.17.orig/configure GraphicsMagick-1.3.17/configure
 --- GraphicsMagick-1.3.17.orig/configure	2012-10-14 05:32:07.000000000 +0800
-+++ GraphicsMagick-1.3.17/configure	2013-08-24 20:49:12.979898592 +0800
++++ GraphicsMagick-1.3.17/configure	2013-08-26 10:56:40.154421057 +0800
 @@ -745,6 +745,9 @@
  HasXML_FALSE
  HasXML_TRUE
@@ -37575,7 +37575,7 @@ diff -rNu GraphicsMagick-1.3.17.orig/configure GraphicsMagick-1.3.17/configure
  echo "LCMS v1           --with-lcms=$with_lcms        	$have_lcms"
 diff -rNu GraphicsMagick-1.3.17.orig/configure.ac GraphicsMagick-1.3.17/configure.ac
 --- GraphicsMagick-1.3.17.orig/configure.ac	2012-10-14 05:30:21.000000000 +0800
-+++ GraphicsMagick-1.3.17/configure.ac	2013-08-24 20:47:04.897204851 +0800
++++ GraphicsMagick-1.3.17/configure.ac	2013-08-26 10:49:50.849511468 +0800
 @@ -662,6 +662,16 @@
      DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-jbig=$with_jbig "
  fi
@@ -37664,7 +37664,7 @@ diff -rNu GraphicsMagick-1.3.17.orig/configure.ac GraphicsMagick-1.3.17/configur
  echo "LCMS v1           --with-lcms=$with_lcms        	$have_lcms"
 diff -rNu GraphicsMagick-1.3.17.orig/magick/magic.c GraphicsMagick-1.3.17/magick/magic.c
 --- GraphicsMagick-1.3.17.orig/magick/magic.c	2011-12-25 03:34:17.000000000 +0800
-+++ GraphicsMagick-1.3.17/magick/magic.c	2013-08-24 20:47:04.897204851 +0800
++++ GraphicsMagick-1.3.17/magick/magic.c	2013-08-26 10:49:50.850511458 +0800
 @@ -59,6 +59,7 @@
  StaticMagic[] =
  {
@@ -37675,7 +37675,7 @@ diff -rNu GraphicsMagick-1.3.17.orig/magick/magic.c GraphicsMagick-1.3.17/magick
    MAGIC("8BIMTEXT", 0, "8BIM#"),
 diff -rNu GraphicsMagick-1.3.17.orig/magick/magick_config.h.in GraphicsMagick-1.3.17/magick/magick_config.h.in
 --- GraphicsMagick-1.3.17.orig/magick/magick_config.h.in	2012-10-14 05:33:46.000000000 +0800
-+++ GraphicsMagick-1.3.17/magick/magick_config.h.in	2013-08-24 20:48:59.000000000 +0800
++++ GraphicsMagick-1.3.17/magick/magick_config.h.in	2013-08-26 10:56:32.000000000 +0800
 @@ -505,6 +505,9 @@
  /* Define if you have umem memory allocation library */
  #undef HasUMEM
@@ -38488,7 +38488,7 @@ diff -rNu GraphicsMagick-1.3.17.orig/magick/magick_config.h.in~ GraphicsMagick-1
 +#undef ssize_t
 diff -rNu GraphicsMagick-1.3.17.orig/magick/static.c GraphicsMagick-1.3.17/magick/static.c
 --- GraphicsMagick-1.3.17.orig/magick/static.c	2012-10-14 05:30:22.000000000 +0800
-+++ GraphicsMagick-1.3.17/magick/static.c	2013-08-24 20:47:04.897204851 +0800
++++ GraphicsMagick-1.3.17/magick/static.c	2013-08-26 10:49:50.850511458 +0800
 @@ -246,6 +246,9 @@
    RegisterVIDImage();
    RegisterVIFFImage();
@@ -38511,7 +38511,7 @@ diff -rNu GraphicsMagick-1.3.17.orig/magick/static.c GraphicsMagick-1.3.17/magic
  #if defined(HasX11)
 diff -rNu GraphicsMagick-1.3.17.orig/magick/static.h GraphicsMagick-1.3.17/magick/static.h
 --- GraphicsMagick-1.3.17.orig/magick/static.h	2012-10-14 05:30:22.000000000 +0800
-+++ GraphicsMagick-1.3.17/magick/static.h	2013-08-24 20:47:04.898204841 +0800
++++ GraphicsMagick-1.3.17/magick/static.h	2013-08-26 10:49:50.850511458 +0800
 @@ -142,6 +142,7 @@
    RegisterVIFFImage(void),
    RegisterVSTImage(void),
@@ -38530,7 +38530,7 @@ diff -rNu GraphicsMagick-1.3.17.orig/magick/static.h GraphicsMagick-1.3.17/magic
    UnregisterXImage(void),
 diff -rNu GraphicsMagick-1.3.17.orig/Makefile.in GraphicsMagick-1.3.17/Makefile.in
 --- GraphicsMagick-1.3.17.orig/Makefile.in	2012-10-14 05:32:10.000000000 +0800
-+++ GraphicsMagick-1.3.17/Makefile.in	2013-08-24 20:49:04.252987661 +0800
++++ GraphicsMagick-1.3.17/Makefile.in	2013-08-26 10:56:36.991452656 +0800
 @@ -1029,6 +1029,15 @@
  	$(AM_CFLAGS) $(CFLAGS) $(coders_wbmp_la_LDFLAGS) $(LDFLAGS) -o \
  	$@

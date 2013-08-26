@@ -228,7 +228,7 @@ ModuleExport void RegisterWEBPImage(void)
 %                                                                             %
 %                                                                             %
 %                                                                             %
-%   U n r e g i s t e r J B I G I m a g e                                     %
+%   U n r e g i s t e r W E B P I m a g e                                     %
 %                                                                             %
 %                                                                             %
 %                                                                             %
