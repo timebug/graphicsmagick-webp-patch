@@ -69,7 +69,7 @@ gm identify bar.webp
 # Licence
 
 ```
-Copyright (C) 2003, 2007 GraphicsMagick Group
+Copyright (C) 2003, 2013 GraphicsMagick Group
 Copyright (C) 2002 ImageMagick Studio
 Copyright 1991-1999 E. I. du Pont de Nemours and Company
 
