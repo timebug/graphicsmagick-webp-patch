@@ -3501,7 +3501,7 @@ fi
 echo "Ghostscript fonts --with-gs-font-dir=$with_gs_font_dir    $result_ghostscript_font_dir"
 echo "Ghostscript lib   --with-gslib=$with_gslib       	$have_gslib"
 echo "JBIG              --with-jbig=$with_jbig        	$have_jbig"
-echo "WEBP              --with-webp=$with_webp          $have_webp"
+echo "WEBP              --with-webp=$with_webp        	$have_webp"
 echo "JPEG v1           --with-jpeg=$with_jpeg        	$have_jpeg"
 echo "JPEG-2000         --with-jp2=$with_jp2          	$have_jp2"
 echo "LCMS v1           --with-lcms=$with_lcms        	$have_lcms"
