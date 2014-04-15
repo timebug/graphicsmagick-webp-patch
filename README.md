@@ -1,5 +1,7 @@
 # A WebP patch for GraphicsMagick
 
+> 2013-12-01: GraphicsMagick 1.3.19 have incorporated this WebP patch [ChangeLog-2013](http://www.graphicsmagick.org/ChangeLog-2013.html)
+
 ```
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -30,9 +32,9 @@
 First, you need Build & Install [libwebp](https://code.google.com/p/webp/downloads/list)
 
 ```
-wget 'https://webp.googlecode.com/files/libwebp-0.3.1.tar.gz'
-tar -xzvf libwebp-0.3.1.tar.gz
-cd libwebp-0.3.1
+wget 'https://webp.googlecode.com/files/libwebp-0.4.0.tar.gz'
+tar -xzvf libwebp-0.4.0.tar.gz
+cd libwebp-0.4.0
  ./configure
  make
  make install
